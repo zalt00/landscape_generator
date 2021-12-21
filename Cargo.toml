@@ -1,0 +1,19 @@
+[package]
+name = "mapgeneration"
+version = "0.1.0"
+edition = "2018"
+
+[profile.dev]
+opt-level = 3
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand_pcg=""
+rand_core=""
+ndarray=""
+image=""
+ndarray-image=""
+config=""
+serde=""
+serde_derive=""
