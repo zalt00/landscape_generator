@@ -3,34 +3,29 @@ use crate::utils::{Arr2d, ColorMapArray};
 
 
 
-pub fn generate_colormap_image(cm: &ColorMapArray) -> Vec<u8> {
+pub fn generate_colormap_image(cm: &ColorMapArray, w: usize) -> Vec<u8> {
     let mut output: Vec<u8> = vec![];
-    let mut v: u16;
+    let mut v: u8;
 
-    for x in 0..cm.get_width() {
-        for y in 0..cm.get_height() {
+    for x in 0..w {
+        for y in 0..w {
             if let Some((r, g, b)) = cm.get_pixel(x, y) {
 
-                v = (r * 65535.0) as u16;
-                output.push((v % 256) as u8);
-                output.push((v >> 8) as u8);
+                v = (r * 255.0) as u8;
+                output.push(v);
 
-                v = (g * 65535.0) as u16;
-                output.push((v % 256) as u8);
-                output.push((v >> 8) as u8);
+                v = (g * 255.0) as u8;
+                output.push(v);
 
-                v = (b * 65535.0) as u16;
-                output.push((v % 256) as u8);
-                output.push((v >> 8) as u8);
+                v = (b * 255.0) as u8;
+                output.push(v);
 
             } else {
                 println!("error - invalid pixel position: x={} y={}", x, y);
                 output.push(0_u8);
                 output.push(0_u8);
                 output.push(0_u8);
-                output.push(0_u8);
-                output.push(0_u8);
-                output.push(0_u8);
+
             }
         }
     }

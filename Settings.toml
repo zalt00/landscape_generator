@@ -1,5 +1,5 @@
 [launch_options]
-generate_sky_heightmap = true
+generate_sky_heightmap = false
 generate_sky_texture = false
 
 generate_terrain_heightmap = true
@@ -8,10 +8,10 @@ generate_terrain_texture = true  # uniquement pris en compte si precedent est "t
 [generation_options]
 seed = 51462
 
-max_terrain_height = 220.0
-irregularity = 0.8  # réel entre 0.0 et 1.0: irregularite du terrain
+max_terrain_height = 250.0
+irregularity = 0.4  # réel entre 0.0 et 1.0: irregularite du terrain
 
-sun_angle = 20.0  # réel entre 0.0 et 89.0: angle du soleil en degre par rapport a l'horizon
+sun_angle = 10.0  # réel entre 0.0 et 89.0: angle du soleil en degre par rapport a l'horizon
 sun_size = 0.002
 atmosphere_radius = 104.0
 planet_radius = 99.0

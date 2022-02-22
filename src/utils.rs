@@ -1,6 +1,8 @@
 use std::convert::TryInto;
 
 use image::{DynamicImage, GenericImageView};
+use rand_core::RngCore;
+use rand_pcg::Mcg128Xsl64;
 
 pub const TWO_POW_32_MINUS_1: u32 = 4294967295;
 pub const TWO_POW_31: u32 = 2147483648;
@@ -174,3 +176,69 @@ impl Arr2d<f64> {
         Arr2d { vector: v, width, height }
     }
 }
+
+
+pub struct ReducedArrayWrapper<'a, T> {
+    array: &'a mut Arr2d<T>,
+    n_array: u32, 
+    reduced_n: u32
+}
+
+impl<T> ReducedArrayWrapper<'_, T> {
+    pub fn new(array: &mut Arr2d<T>, n_array: u32, reduced_n: u32) -> ReducedArrayWrapper<T> {
+
+        assert!(n_array >= reduced_n);
+        assert_eq!(array.get_width(), array.get_height());
+        assert_eq!(array.get_width(), 2_usize.pow(n_array) + 1);
+
+        ReducedArrayWrapper { array, n_array, reduced_n }
+    }
+
+    pub fn geti(&self, x: i32, y: i32) -> Option<&T> {
+        self.array.geti(
+            x * 2_i32.pow(self.n_array - self.reduced_n),
+            y * 2_i32.pow(self.n_array - self.reduced_n))
+    }
+
+    pub fn get(&self, x: usize, y: usize) -> Option<&T> {
+        self.array.get(
+            x * 2_usize.pow(self.n_array - self.reduced_n),
+            y * 2_usize.pow(self.n_array - self.reduced_n))
+    }
+
+    pub fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut T> {
+        self.array.get_mut(
+            x * 2_usize.pow(self.n_array - self.reduced_n),
+            y * 2_usize.pow(self.n_array - self.reduced_n))
+    }
+
+    pub fn get_reduced_n(&self) -> u32 {
+        self.reduced_n
+    }
+
+    pub fn convert(&self, x: usize) -> usize {
+        x * 2_usize.pow(self.n_array - self.reduced_n)
+    }
+
+}
+
+
+
+pub fn linear_interpolation(t: f32, v0: f32, v1: f32) -> f32 {
+    assert!(0.0 <= t && t <= 1.0);
+    (v1 - v0) * t + v0
+}
+
+pub fn bilinear_interpolation(t1: f32, t2: f32, v00: f32, v01: f32, v10: f32, v11:f32) -> f32 {
+    let v0 = linear_interpolation(t1, v00, v10);
+    let v1 = linear_interpolation(t1, v01, v11);
+    linear_interpolation(t2, v0, v1)
+} 
+
+
+pub fn generate_in_interval(max: u16, rng: &mut Mcg128Xsl64) -> u16 {
+    let big_number: u64 = rng.next_u64();
+    (big_number % max as u64) as u16  // not uniform unless max is a power of two
+}
+
+

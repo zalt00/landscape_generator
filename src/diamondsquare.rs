@@ -7,7 +7,7 @@ use rand_pcg::Mcg128Xsl64;
 use rand_core::RngCore;
 use ndarray::Array2;
 
-use crate::utils::{Arr2d, TWO_POW_15_F32, TWO_POW_31, Vec2};
+use crate::{utils::{Arr2d, TWO_POW_15_F32, TWO_POW_31, Vec2, ReducedArrayWrapper, ColorMapArray}, erosion::erode};
 
 
 
@@ -46,8 +46,8 @@ pub fn get_multiplier(w: usize, id: usize, regularity: f32, h: f32, x: usize, y:
 }
 
 
-pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, reduced_output: &mut Arr2d<f32>, scaling: usize, h: f32,
-    n_iteration_difference: u32, rng: &mut Mcg128Xsl64) {
+pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, power_of_two: usize, reduced_output: &mut Arr2d<f32>, scaling: usize, mut h: f32,
+    n_iteration_difference: u32, rng: &mut Mcg128Xsl64, color_map: &mut ColorMapArray) {
 
     assert_eq!(arr.get_height(), arr.get_width());
     assert_eq!(output.get_height(), output.get_width());
@@ -131,6 +131,12 @@ pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, reduced_outpu
         }
 
         i = id;
+        
+        if i == reduced_output_step {
+            erode(&mut ReducedArrayWrapper::new(output, power_of_two as u32, power_of_two as u32 - n_iteration_difference), 10000, 220.0, rng, color_map);
+            h = 0.0;
+        }
+
 
     }
 
