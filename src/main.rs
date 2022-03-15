@@ -67,7 +67,7 @@ fn generate() {
         let scaling = usize::pow(2, 4);
         let w = 2_usize.pow(n as u32) + 1;
 
-        let reduced_w = 2_usize.pow(n as u32 - 1) + 1;
+        let reduced_w = 2_usize.pow(n as u32 - 2) + 1;
 
         let mut terrain_heightmap: Arr2d<f32> = Arr2d::init_with_value(w, w, 10.0);
         let mut reduced_terrain_heightmap: Arr2d<f32> = Arr2d::init_with_value(reduced_w, reduced_w, 10.0);
@@ -75,7 +75,8 @@ fn generate() {
         let mut terrain_colormap: ColorMapArray = ColorMapArray::new_empty(w, w);
 
         diamond_square_2(&template, &mut terrain_heightmap,
-             n, &mut reduced_terrain_heightmap, scaling, settings.generation_options.irregularity, 1, &mut rng, &mut terrain_colormap);
+             n, &mut reduced_terrain_heightmap, scaling, settings.generation_options.irregularity, 2, &mut rng, &mut terrain_colormap,
+            &settings.generation_options);
 
         //erode(&mut ReducedArrayWrapper::new(&mut reduced_terrain_heightmap, n as u32 - 1, n as u32 - 1), 200000, settings.generation_options.max_terrain_height, &mut rng);
             

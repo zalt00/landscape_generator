@@ -8,8 +8,8 @@ generate_terrain_texture = true  # uniquement pris en compte si precedent est "t
 [generation_options]
 seed = 51462
 
-max_terrain_height = 250.0
-irregularity = 0.4  # réel entre 0.0 et 1.0: irregularite du terrain
+max_terrain_height = 110.0
+irregularity = 1.0  # réel entre 0.0 et 1.0: irregularite du terrain
 
 sun_angle = 10.0  # réel entre 0.0 et 89.0: angle du soleil en degre par rapport a l'horizon
 sun_size = 0.002
@@ -19,6 +19,11 @@ planet_radius = 99.0
 ambient_sky_light = 0.6
 
 shadow_direction = 3
+
+number_of_erosion_iterations = 270000
+inertia = 0.05
+radius = 2
+capacity_factor = 6.0
 
 
 

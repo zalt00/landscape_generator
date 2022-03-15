@@ -26,7 +26,12 @@ pub struct GenerationOptions {
 
     pub ambient_sky_light: f32,
 
-    pub shadow_direction: u8
+    pub shadow_direction: u8,
+
+    pub number_of_erosion_iterations: u32,
+    pub inertia: f64,
+    pub radius: u8,
+    pub capacity_factor: f64
 }
 
 

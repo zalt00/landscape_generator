@@ -5,6 +5,7 @@ use rand_core::RngCore;
 use rand_pcg::Mcg128Xsl64;
 
 pub const TWO_POW_32_MINUS_1: u32 = 4294967295;
+pub const TWO_POW_32: u64 = 4294967296;
 pub const TWO_POW_31: u32 = 2147483648;
 pub const TWO_POW_31_F32: f32 = 2147483648.0;
 
@@ -26,6 +27,26 @@ pub struct Vec2<T> {
     pub x: T,
     pub y: T
 }
+
+impl Vec2<f64> {
+    pub fn normalize_ip(&mut self) -> Result<(), ()> {
+        let length = self.get_length();
+
+        if length == 0.0 {
+            Err(())
+        } else {
+            self.x /= length;
+            self.y /= length;
+            Ok(())
+        }
+
+    }
+
+    pub fn get_length(&self) -> f64 {
+        f64::sqrt(self.x * self.x + self.y * self.y)
+    }
+}
+
 
 #[derive(Clone, Copy)]
 pub struct Rect<T> {
@@ -220,6 +241,15 @@ impl<T> ReducedArrayWrapper<'_, T> {
         x * 2_usize.pow(self.n_array - self.reduced_n)
     }
 
+    pub fn get_reduced_width(&self) -> usize {
+        2_usize.pow(self.reduced_n) + 1
+    }
+
+    pub fn is_position_valid(&self, x: i32, y: i32) -> bool {
+        let width = self.get_reduced_width() as i32;
+        0 <= x && x < width && 0 <= y && y < width
+    }
+
 }
 
 
@@ -239,6 +269,16 @@ pub fn bilinear_interpolation(t1: f32, t2: f32, v00: f32, v01: f32, v10: f32, v1
 pub fn generate_in_interval(max: u16, rng: &mut Mcg128Xsl64) -> u16 {
     let big_number: u64 = rng.next_u64();
     (big_number % max as u64) as u16  // not uniform unless max is a power of two
+}
+
+pub fn next_random_number(max: u64, rng: &mut Mcg128Xsl64) -> u32 {
+    (rng.next_u32() as u64 * max / TWO_POW_32_MINUS_1 as u64) as u32
+}
+
+
+
+pub fn rand(rng: &mut Mcg128Xsl64) -> f32 {
+    rng.next_u32() as f32 / (2_f32.powi(32))
 }
 
 

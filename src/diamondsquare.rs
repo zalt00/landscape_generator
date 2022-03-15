@@ -7,7 +7,7 @@ use rand_pcg::Mcg128Xsl64;
 use rand_core::RngCore;
 use ndarray::Array2;
 
-use crate::{utils::{Arr2d, TWO_POW_15_F32, TWO_POW_31, Vec2, ReducedArrayWrapper, ColorMapArray}, erosion::erode};
+use crate::{utils::{Arr2d, TWO_POW_15_F32, TWO_POW_31, Vec2, ReducedArrayWrapper, ColorMapArray}, erosion::erode, settings::{Settings, GenerationOptions}};
 
 
 
@@ -31,23 +31,23 @@ pub fn normalize(n: f32) -> f32 {
     f32::exp(- (n * n) / (TWO_POW_31 as f32))
 }
 
-pub fn generate_noise(w: usize, id: usize, h: f32, x: usize, y: usize, rng: &mut Mcg128Xsl64) -> f32 {
+pub fn generate_noise(w: usize, id: usize, h: f32, max_height: f32, rng: &mut Mcg128Xsl64) -> f32 {
     let n = (rng.next_u32() >> 16) as f32 - TWO_POW_15_F32;
 
-    let noise = ((n as f32) / TWO_POW_15_F32) * h;
+    let noise = ((n as f32) / TWO_POW_15_F32);
     
-    noise * get_multiplier(w, id, 0.0, h, x, y)    
+    noise * get_multiplier(w, id, h, max_height)    
 
 }
 
-pub fn get_multiplier(w: usize, id: usize, regularity: f32, h: f32, x: usize, y: usize) -> f32 {
-    h * (id as f32)
+pub fn get_multiplier(w: usize, id: usize, h: f32, max_height: f32) -> f32 {
+    h * (id as f32) * max_height / w as f32
 
 }
 
 
 pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, power_of_two: usize, reduced_output: &mut Arr2d<f32>, scaling: usize, mut h: f32,
-    n_iteration_difference: u32, rng: &mut Mcg128Xsl64, color_map: &mut ColorMapArray) {
+    n_iteration_difference: u32, rng: &mut Mcg128Xsl64, color_map: &mut ColorMapArray, settings: &GenerationOptions) {
 
     assert_eq!(arr.get_height(), arr.get_width());
     assert_eq!(output.get_height(), output.get_width());
@@ -103,7 +103,7 @@ pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, power_of_two:
                         + output.get(x + id, y - id).unwrap()
                     ) / 4.0;
 
-                    *(output.get_mut(x, y).unwrap()) = center_value + generate_noise(w, id, h, x, y, rng);
+                    *(output.get_mut(x, y).unwrap()) = center_value + generate_noise(w, id, h, settings.max_terrain_height, rng);
                 }
             }
 
@@ -121,7 +121,7 @@ pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, power_of_two:
                     if y >= id {sum += output.get(x, y - id).unwrap(); n += 1}
                     if y + id < w {sum += output.get(x, y + id).unwrap(); n += 1}
 
-                    *(output.get_mut(x, y).unwrap()) = sum / (n as f32) + generate_noise(w, id, h, x, y, rng);
+                    *(output.get_mut(x, y).unwrap()) = sum / (n as f32) + generate_noise(w, id, h, settings.max_terrain_height, rng);
                 };
             }
         }
@@ -133,7 +133,7 @@ pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, power_of_two:
         i = id;
         
         if i == reduced_output_step {
-            erode(&mut ReducedArrayWrapper::new(output, power_of_two as u32, power_of_two as u32 - n_iteration_difference), 10000, 220.0, rng, color_map);
+            erode(&mut ReducedArrayWrapper::new(output, power_of_two as u32, power_of_two as u32 - n_iteration_difference), rng, color_map, settings);
             h = 0.0;
         }
 
