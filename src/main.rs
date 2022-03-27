@@ -14,10 +14,12 @@ mod terrain_texture_generation;
 mod settings;
 mod gradient_map_generation;
 mod erosion;
+mod env_coloration;
 
 use image::ImageBuffer;
 use image_generation::generate_test_image;
 use rand_pcg::Mcg128Xsl64;
+use settings::{LaunchOptions, Settings};
 use terrain_texture_generation::generate_terrain_texture;
 
 use crate::{diamondsquare::{diamond_square_2, generate_demisphere_heightmap}, image_generation::{generate_colormap_image, generate_heightmap_image}, sky_generation::{LightSpectrum, generate_sky_colormap}, utils::{Arr2d, ColorMapArray, PI}, gradient_map_generation::generate_gradient_map, erosion::erode};
@@ -29,6 +31,8 @@ use crate::utils::ReducedArrayWrapper;
 
 
 fn main() {
+    let mut settings = settings::Settings::new().expect("did not work welp");
+    println!("{:?}", settings);
 
     let mut command = String::new();
     while command != "quit" {
@@ -40,9 +44,12 @@ fn main() {
         command = command.trim().to_lowercase();
 
         if command == "display" {
-            display()
+            display(&settings.launch_options)
+        } else if command == "generate -c" {
+            generate(&settings)
         } else if command == "generate" {
-            generate()
+            settings = settings::Settings::new().expect("did not work welp");
+            generate(&settings)
         } else if command != "quit" {
             println!("Error - unknown command: \"{}\"", command)
         }
@@ -51,23 +58,22 @@ fn main() {
 }
 
 
-fn generate() {
+fn generate(settings: &Settings) {
 
-    let settings = settings::Settings::new().expect("did not work welp");
-    println!("{:?}", settings);
+
     if settings.launch_options.generate_terrain_heightmap {
         let template_img = image::io::Reader::open("template.png").expect("welp").decode().expect("welp");
 
-        let n: usize = 10;
+        let n: usize = settings.generation_options.terrain_power_of_two as usize;
     
         let mut rng = Mcg128Xsl64::new(settings.generation_options.seed as u128);
     
-        let template = Arr2d::from_dynamic_image(template_img, settings.generation_options.max_terrain_height);
+        let template = Arr2d::from_dynamic_image(template_img, settings.generation_options.max_terrain_height, &settings.generation_options);
     
-        let scaling = usize::pow(2, 4);
+        let scaling = usize::pow(2, n as u32 - settings.generation_options.template_power_of_two);
         let w = 2_usize.pow(n as u32) + 1;
 
-        let reduced_w = 2_usize.pow(n as u32 - 2) + 1;
+        let reduced_w = 2_usize.pow(settings.generation_options.mesh_power_of_two) + 1;
 
         let mut terrain_heightmap: Arr2d<f32> = Arr2d::init_with_value(w, w, 10.0);
         let mut reduced_terrain_heightmap: Arr2d<f32> = Arr2d::init_with_value(reduced_w, reduced_w, 10.0);
@@ -75,7 +81,7 @@ fn generate() {
         let mut terrain_colormap: ColorMapArray = ColorMapArray::new_empty(w, w);
 
         diamond_square_2(&template, &mut terrain_heightmap,
-             n, &mut reduced_terrain_heightmap, scaling, settings.generation_options.irregularity, 2, &mut rng, &mut terrain_colormap,
+             n, &mut reduced_terrain_heightmap, scaling, settings.generation_options.irregularity, n as u32 - settings.generation_options.mesh_power_of_two, &mut rng, &mut terrain_colormap,
             &settings.generation_options);
 
         //erode(&mut ReducedArrayWrapper::new(&mut reduced_terrain_heightmap, n as u32 - 1, n as u32 - 1), 200000, settings.generation_options.max_terrain_height, &mut rng);
@@ -143,8 +149,8 @@ fn generate() {
 }
 
 
-fn display() {
-    let output = Command::new(r"C:\Users\Hélène Le Berre\rp\mapgeneration\displayer\launcher.cmd")
+fn display(launch_settings: &LaunchOptions) {
+    let output = Command::new(&launch_settings.displayer_path)
         // .arg("cmd")
         // .arg(r"C:\Users\Hélène Le Berre\rp\mapgeneration\displayer\main.py")
         .output()

@@ -5,7 +5,6 @@ use std::{convert::TryInto, ops::Add};
 
 use rand_pcg::Mcg128Xsl64;
 use rand_core::RngCore;
-use ndarray::Array2;
 
 use crate::{utils::{Arr2d, TWO_POW_15_F32, TWO_POW_31, Vec2, ReducedArrayWrapper, ColorMapArray}, erosion::erode, settings::{Settings, GenerationOptions}};
 
@@ -73,12 +72,12 @@ pub fn diamond_square_2(arr: &Arr2d<f32>, output: &mut Arr2d<f32>, power_of_two:
     println!("{}", output.get_width());
 
 
-    let mut number_of_step_to_skip = 6;
+    let mut number_of_step_to_skip = settings.template_power_of_two;
 
 
     let mut i = w - 1;
 
-    let mut reduced_output_step = 2_usize.pow(n_iteration_difference);
+    let reduced_output_step = 2_usize.pow(n_iteration_difference);
 
     let mut id: usize;
     let mut offset: usize;

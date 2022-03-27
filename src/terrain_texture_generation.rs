@@ -4,7 +4,7 @@ use std::convert::TryInto;
 use rand_core::RngCore;
 use rand_pcg::Mcg128Xsl64;
 
-use crate::utils::{Arr2d, ColorMapArray, HALF_PI, PI, TWO_POW_15_F32, bilinear_interpolation};
+use crate::{utils::{Arr2d, ColorMapArray, HALF_PI, PI, TWO_POW_15_F32, bilinear_interpolation}, settings::GenerationOptions};
 
 pub fn generate_f32_2(h: f32, rng: &mut Mcg128Xsl64) -> f32 {
     let n = (rng.next_u32() >> 16) as f32 - TWO_POW_15_F32;
@@ -28,7 +28,7 @@ pub fn generate_terrain_texture(output: &mut ColorMapArray, heightmap: &Arr2d<f3
 
             if let Some(pixel) = output.get_mut_pixel(y, x) {
 
-                noise = generate_f32_2(0.001, rng);
+                noise = generate_f32_2(0.01, rng);
 
                 *pixel.0 += noise;
                 *pixel.1 += noise;
@@ -58,6 +58,18 @@ fn below_threshold(v: f32, t: f32) -> f32 {
         v
     }
 }
+
+
+
+pub fn add_environment_coloration2(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, width: usize, settings: &GenerationOptions, rng: &mut Mcg128Xsl64) {
+
+    
+
+
+
+}
+
+
 
 
 pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<f32>,
@@ -284,9 +296,9 @@ pub fn add_shadow(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, width: usi
                 exposition -= (local_height - current_max_per_line[j]).abs() / ref_height * 0.1 + 0.60;
             }
 
-            *pixel.0 *= exposition;
-            *pixel.1 *= exposition;
-            *pixel.2 *= exposition;
+            *pixel.0 -= exposition;
+            *pixel.1 -= exposition;
+            *pixel.2 -= exposition;
 
             if i == 0 {
                 *pixel.0 += 0.5;

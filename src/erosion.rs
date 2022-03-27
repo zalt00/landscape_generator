@@ -140,9 +140,11 @@ pub fn erode2(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, c
             *current_height_mut += f32::min(sediment_stocked, 0.5);
             sediment_stocked -= f32::min(sediment_stocked, 0.5);
 
-            pixel = color_map.get_mut_pixel(heightmap.convert(y), heightmap.convert(x)).unwrap();
-            *pixel.0 += 1.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
-            *pixel.1 += (water_remaining as f32) / 200.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
+            /*
+            // pixel = color_map.get_mut_pixel(heightmap.convert(y), heightmap.convert(x)).unwrap();
+            // *pixel.0 += 1.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
+            // *pixel.1 += (water_remaining as f32) / 200.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
+            */
 
             water_remaining -= 1;
 
@@ -177,7 +179,7 @@ pub fn erode2(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, c
 
 
 
-pub fn compute_height_and_slopes(heightmap: &mut ReducedArrayWrapper<f32>, offset_x: f64, offset_y: f64, arr_pos_x: usize, arr_pos_y: usize, height: &mut f64, hslope: &mut f64, vslope: &mut f64) {
+pub fn compute_height_and_slopes(heightmap: &ReducedArrayWrapper<f32>, offset_x: f64, offset_y: f64, arr_pos_x: usize, arr_pos_y: usize, height: &mut f64, hslope: &mut f64, vslope: &mut f64) {
 
     let height_00 = *heightmap.get(arr_pos_x, arr_pos_y).unwrap() as f64;
     let height_01 = *heightmap.get(arr_pos_x, arr_pos_y + 1).unwrap() as f64;
@@ -195,19 +197,19 @@ pub fn compute_height_and_slopes(heightmap: &mut ReducedArrayWrapper<f32>, offse
 
 }
 
-struct RelativePoint {
+pub struct RelativePoint {
     dx: i32, 
     dy: i32, 
     weight: f64
 }
 
-struct Point {
-    x: usize,
-    y: usize,
-    weight: f64
+pub struct Point {
+    pub x: usize,
+    pub y: usize,
+    pub weight: f64
 }
 
-struct PointsInRangeIterator<'a> {
+pub struct PointsInRangeIterator<'a> {
     relative_points_table: &'a Vec<RelativePoint>,
     height_map_width: usize,
     x: i32,
@@ -216,7 +218,7 @@ struct PointsInRangeIterator<'a> {
 }
 
 impl<'a> PointsInRangeIterator<'a> {
-    fn new(relative_points_table: &'a Vec<RelativePoint>, height_map_width: usize, x: i32, y: i32) -> PointsInRangeIterator {
+    pub fn new(relative_points_table: &'a Vec<RelativePoint>, height_map_width: usize, x: i32, y: i32) -> PointsInRangeIterator {
         PointsInRangeIterator { relative_points_table, height_map_width, x, y, index: 0 }
     }
 }
@@ -256,7 +258,7 @@ impl<'a> Iterator for PointsInRangeIterator<'a> {
 
 }
 
-fn compute_points_in_range(relative_points_table: &mut Vec<RelativePoint>, radius: i32) {
+pub fn compute_points_in_range(relative_points_table: &mut Vec<RelativePoint>, radius: i32) {
 
     let mut weight: f64;
     let mut weight_sum = 0_f64;
@@ -326,7 +328,7 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
     let mut to_erode: f64;
     let mut sediment_eroded: f64;
 
-    let mut pixel;
+    // // let mut pixel;
 
     let mut sediment_stocked: f64;
 
@@ -427,9 +429,9 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
             speed = f64::sqrt(speed * speed + height_difference.abs() / settings.max_terrain_height as f64 * 1.0);
 
             
-            pixel = color_map.get_mut_pixel(heightmap.convert(arr_pos_y), heightmap.convert(arr_pos_x)).unwrap();
-            *pixel.0 += 1.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
-            *pixel.1 += (current_lifetime as f32) / 200.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
+            // // pixel = color_map.get_mut_pixel(heightmap.convert(arr_pos_y), heightmap.convert(arr_pos_x)).unwrap();
+            // // *pixel.0 += 1.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
+            // // *pixel.1 += (current_lifetime as f32) / 200.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
 
 
 

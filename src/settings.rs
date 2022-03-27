@@ -8,13 +8,20 @@ pub struct LaunchOptions {
     pub generate_sky_heightmap: bool,
     pub generate_sky_texture: bool,
     pub generate_terrain_heightmap: bool,
-    pub generate_terrain_texture: bool
+    pub generate_terrain_texture: bool,
+
+    pub displayer_path: String
 }
 
 
 #[derive(Debug, Deserialize)]
 pub struct GenerationOptions {
     pub seed: u64,
+
+    pub terrain_power_of_two: u32,
+    pub mesh_power_of_two: u32,
+
+    pub template_power_of_two: u32,
 
     pub max_terrain_height: f32,
     pub irregularity: f32,

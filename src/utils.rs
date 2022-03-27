@@ -4,6 +4,8 @@ use image::{DynamicImage, GenericImageView};
 use rand_core::RngCore;
 use rand_pcg::Mcg128Xsl64;
 
+use crate::settings::GenerationOptions;
+
 pub const TWO_POW_32_MINUS_1: u32 = 4294967295;
 pub const TWO_POW_32: u64 = 4294967296;
 pub const TWO_POW_31: u32 = 2147483648;
@@ -172,16 +174,18 @@ impl Arr2d<f32> {
         Arr2d { vector: v, width, height }
     }
 
-    pub fn from_dynamic_image(img: DynamicImage, max_height: f32) -> Arr2d<f32> {
+    pub fn from_dynamic_image(img: DynamicImage, max_height: f32, generation_settings: &GenerationOptions) -> Arr2d<f32> {
 
-        let mut arr = Arr2d::zeros(129, 129);
+        let w = 2_usize.pow(generation_settings.template_power_of_two) + 1;
+
+        let mut arr = Arr2d::zeros(w, w);
         let mut v: &mut f32;
 
 
-        for x in 0..65_u32 {
-            for y in 0..65_u32 {
+        for x in 0..w {
+            for y in 0..w {
                 v = arr.get_mut(x as usize, y as usize).unwrap();
-                *v = img.get_pixel(x, y).0[0] as f32 / 255.0 * max_height;
+                *v = img.get_pixel(x as u32, y as u32).0[0] as f32 / 255.0 * max_height;
             }
         };
         arr
