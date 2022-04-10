@@ -96,6 +96,32 @@ impl ColorMapArray {
         } else {None}
     }
 
+    pub fn lighten_portion(&mut self, x: usize, y: usize, width: usize, wp: f32) -> Option<()> {
+
+        let mut t1: f32;
+        let mut t2: f32;
+
+        let mut pix;
+        let mut white_proportion;
+
+        for i in x..(x + width) {
+            for j in y..(y + width) {
+
+                pix = self.get_mut_pixel(i, j)?;
+
+                white_proportion = wp;
+                *pix.0 = (1.0 - white_proportion) * *pix.0 + white_proportion;
+                *pix.1 = (1.0 - white_proportion) * *pix.1 + white_proportion;
+                *pix.2 = (1.0 - white_proportion) * *pix.2 + white_proportion;
+
+            }
+        }
+
+        Some(())
+
+
+    }
+
     pub fn new_empty(width: usize, height: usize) -> ColorMapArray {
         ColorMapArray {r: Arr2d::zeros(width, height), g: Arr2d::zeros(width, height), b: Arr2d::zeros(width, height)}
     }
@@ -239,6 +265,10 @@ impl<T> ReducedArrayWrapper<'_, T> {
 
     pub fn get_reduced_n(&self) -> u32 {
         self.reduced_n
+    }
+
+    pub fn get_scaling(&self) -> usize {
+        2_usize.pow(self.n_array - self.reduced_n)
     }
 
     pub fn convert(&self, x: usize) -> usize {

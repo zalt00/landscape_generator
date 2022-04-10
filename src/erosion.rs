@@ -265,7 +265,7 @@ pub fn compute_points_in_range(relative_points_table: &mut Vec<RelativePoint>, r
 
     for dx in -radius..=radius {
         for dy in -radius..=radius {
-            weight = f64::sqrt((dx * dx + dy * dy) as f64);
+            weight = radius as f64 - f64::sqrt((dx * dx + dy * dy) as f64);
             if weight > 0.0 {
                 relative_points_table.push(RelativePoint {dx, dy, weight});
                 weight_sum += weight
@@ -287,7 +287,7 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
 
     println!("starting erosion, number of iterations: {}", settings.number_of_erosion_iterations);
 
-    const initial_lifetime: usize = 30;
+    let initial_lifetime: usize = settings.initial_lifetime as usize;
     
     let mut pos_x: f64;
     let mut pos_y: f64;

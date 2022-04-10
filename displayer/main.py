@@ -4,6 +4,8 @@ from panda3d.core import (Filename, HeightfieldTesselator, DirectionalLight,
 import math
 from panda3d.core import Fog
 import toml
+import json
+import datetime
 
 
 class App(ShowBase):
@@ -15,6 +17,11 @@ class App(ShowBase):
 
     
     def __init__(self):
+
+        self.session_name = input("enter the name of the session: ")
+        self.session_name += f"-{datetime.date.today()}"
+        self.i = 0
+
         super().__init__()
 
         settings = toml.load("./settings.toml")
@@ -98,8 +105,9 @@ class App(ShowBase):
         self.fog.setMode(Fog.MLinear)
         self.terrain.getRoot().setFog(self.fog)
         self.fog.setExpDensity(0.0005)
-
-        self.fog.setColor((0.0126532465, 0.23597072, 0.5843365, 0.7))
+        
+        # self.fog.setColor((0.0126532465, 0.23597072, 0.5843365, 0.7))
+        self.fog.setColor((1.0, 1.0, 1.0, 1.0))
         
         self.gameTask = taskMgr.add(self.gameLoop, "gameLoop")
 
@@ -188,6 +196,36 @@ class App(ShowBase):
         self.accept("a-up", self.setKey, ["lock_sky_height", 0])
 
         self.accept("w", self.reload_textures)
+
+        self.accept("v", self.take_screenshot)
+
+        self.accept("x", self.save_settings)
+        self.accept("c", self.load_settings)
+
+    def take_screenshot(self):
+        name = f"screenshots/{self.session_name}-{self.i}.png"
+        base.screenshot(name, False)
+
+        self.i += 1
+
+        print(f"Saved screenshot as name {name}")
+
+
+    def save_settings(self):
+        with open("displayer/settings.json", "w") as file:
+            json.dump(dict(camera_hpr=self.hpr, camera_xyz=self.xyz, sky_height=self.sky_height, sky_rotation=self.lighting_hpr[0]), file)
+        print("config saved")
+
+    def load_settings(self):
+        with open("displayer/settings.json") as file:
+            data = json.load(file)
+
+        self.hpr[:] = data["camera_hpr"]
+        self.xyz[:] = data["camera_xyz"]
+        self.sky_height = data["sky_height"]
+        self.lighting_hpr[0] = data["sky_rotation"]
+
+        print("config loaded")
 
     def reload_textures(self):
         print(0)

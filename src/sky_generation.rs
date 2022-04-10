@@ -1,3 +1,5 @@
+use std::{fs::File, io::Write};
+
 use crate::utils::{ColorMapArray, HALF_PI, PI};
 
 
@@ -251,7 +253,7 @@ pub fn compute_diffusion_rate(distance: f32, wavelength: f32) -> f32 {
 pub fn generate_sky_colormap(
     colormap: &mut ColorMapArray, w: usize,
     planet_radius: f32, atmosphere_radius: f32,
-    incident_spectrum: &mut LightSpectrum, angle: f32, sun_size: f32, ambient_sky_light: f32)
+    incident_spectrum: &mut LightSpectrum, angle: f32, sun_size: f32, ambient_sky_light: f32, ambient_col_out: &mut [f32;3], sun_col_out: &mut [f32;3])
 {
 
     let mut diffused_spectrum = incident_spectrum.diffuse(planet_radius, atmosphere_radius, angle);
@@ -281,7 +283,18 @@ pub fn generate_sky_colormap(
 
     println!("ambient_color: {}, {}, {}", ambient_color.0, ambient_color.1, ambient_color.2);
     println!("sun_color: {}, {}, {}", sun_color.0, sun_color.1, sun_color.2);
+    ambient_col_out[0] = ambient_color.0;
+    ambient_col_out[1] = ambient_color.1;
+    ambient_col_out[2] = ambient_color.2;
+    sun_col_out[0] = sun_color.0;
+    sun_col_out[1] = sun_color.1;
+    sun_col_out[2] = sun_color.2;
 
+
+    {
+        let mut file = File::create("cfg.data").expect("welp");
+        file.write_all(format!("{}\n{}\n{}", sun_color.0, sun_color.1, sun_color.2).as_bytes()).expect("welp2");
+    }
 
     let center = (w / 2) as i32;
     let squared_sphere_radius = center.pow(2);

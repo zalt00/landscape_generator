@@ -61,7 +61,45 @@ fn main() {
 fn generate(settings: &Settings) {
 
 
+    let demisphere_radius = 20 * 4;
+    let demisphere_width = demisphere_radius * 8 * 2 + 1;
+
+    let mut ambient_col_out = [1.0, 1.0, 1.0];
+    let mut sun_col_out = [1.0, 1.0, 1.0];
+
+    let demisphere_heightmap_width = 2_usize.pow(7);
+    
+    if settings.launch_options.generate_sky_heightmap {
+        let mut demisphere_heightmap: Arr2d<f32> = Arr2d::zeros(demisphere_heightmap_width, demisphere_heightmap_width);
+        generate_demisphere_heightmap(&mut demisphere_heightmap, demisphere_heightmap_width);
+
+        image::save_buffer("demisphere_heightmap.png",
+        &generate_heightmap_image(&demisphere_heightmap, false), demisphere_heightmap_width as u32, demisphere_heightmap_width as u32, image::ColorType::Rgb8)
+        .expect("welp");
+
+    }
+
+    
+    if settings.launch_options.generate_sky_texture {
+        let mut demisphere_colormap: ColorMapArray = ColorMapArray::new_empty(demisphere_width, demisphere_width);
+
+        let sun_angle = settings.generation_options.sun_angle * PI / 180.0;
+    
+        let mut incident_light_spectrum = LightSpectrum::new();
+    
+        generate_sky_colormap(&mut demisphere_colormap, demisphere_width,
+            settings.generation_options.planet_radius, settings.generation_options.atmosphere_radius, &mut incident_light_spectrum, sun_angle,
+            settings.generation_options.sun_size, settings.generation_options.ambient_sky_light, &mut ambient_col_out, &mut sun_col_out
+        );
+    
+        image::save_buffer("demisphere_colormap.png",
+         &generate_colormap_image(&demisphere_colormap, demisphere_width), demisphere_width as u32, demisphere_width as u32, image::ColorType::Rgb8)
+         .expect("welp");
+        
+    }
+
     if settings.launch_options.generate_terrain_heightmap {
+
         let template_img = image::io::Reader::open("template.png").expect("welp").decode().expect("welp");
 
         let n: usize = settings.generation_options.terrain_power_of_two as usize;
@@ -100,8 +138,8 @@ fn generate(settings: &Settings) {
             reduced_w as u32, reduced_w as u32, image::ColorType::Rgb8).expect("welp");
     
             let mut buffer: Arr2d<f32> = Arr2d::zeros(w, w);
-            generate_terrain_texture(&mut terrain_colormap, &terrain_heightmap, &terrain_gradientmap, w.div_euclid(reduced_w) + 1, w, settings.generation_options.max_terrain_height * 2_f32.powi(1),
-                settings.generation_options.shadow_direction, settings.generation_options.sun_angle * PI / 180.0,  &mut rng);
+            generate_terrain_texture(&mut terrain_colormap, &mut terrain_heightmap, &terrain_gradientmap, w.div_euclid(reduced_w) + 1, w, settings.generation_options.max_terrain_height * 2_f32.powi(1),
+                settings.generation_options.shadow_direction, settings.generation_options.sun_angle * PI / 180.0,  &mut rng, &ambient_col_out, &sun_col_out, &settings.generation_options);
 
             image::save_buffer("colormap.png",
             &generate_colormap_image(&terrain_colormap, w - 1), w as u32 - 1, w as u32 - 1, image::ColorType::Rgb8)
@@ -111,40 +149,6 @@ fn generate(settings: &Settings) {
 
     }
 
-
-    let demisphere_radius = 20 * 4;
-    let demisphere_width = demisphere_radius * 8 * 2 + 1;
-
-    let demisphere_heightmap_width = 2_usize.pow(7);
-    
-    if settings.launch_options.generate_sky_heightmap {
-        let mut demisphere_heightmap: Arr2d<f32> = Arr2d::zeros(demisphere_heightmap_width, demisphere_heightmap_width);
-        generate_demisphere_heightmap(&mut demisphere_heightmap, demisphere_heightmap_width);
-
-        image::save_buffer("demisphere_heightmap.png",
-        &generate_heightmap_image(&demisphere_heightmap, false), demisphere_heightmap_width as u32, demisphere_heightmap_width as u32, image::ColorType::Rgb8)
-        .expect("welp");
-
-    }
-
-    
-    if settings.launch_options.generate_sky_texture {
-        let mut demisphere_colormap: ColorMapArray = ColorMapArray::new_empty(demisphere_width, demisphere_width);
-
-        let sun_angle = settings.generation_options.sun_angle * PI / 180.0;
-    
-        let mut incident_light_spectrum = LightSpectrum::new();
-    
-        generate_sky_colormap(&mut demisphere_colormap, demisphere_width,
-            settings.generation_options.planet_radius, settings.generation_options.atmosphere_radius, &mut incident_light_spectrum, sun_angle,
-            settings.generation_options.sun_size, settings.generation_options.ambient_sky_light
-        );
-    
-        image::save_buffer("demisphere_colormap.png",
-         &generate_colormap_image(&demisphere_colormap, demisphere_width), demisphere_width as u32, demisphere_width as u32, image::ColorType::Rgb8)
-         .expect("welp");
-        
-    }
 
 }
 

@@ -4,7 +4,7 @@ use std::convert::TryInto;
 use rand_core::RngCore;
 use rand_pcg::Mcg128Xsl64;
 
-use crate::{utils::{Arr2d, ColorMapArray, HALF_PI, PI, TWO_POW_15_F32, bilinear_interpolation}, settings::GenerationOptions};
+use crate::{utils::{Arr2d, ColorMapArray, HALF_PI, PI, TWO_POW_15_F32, bilinear_interpolation, ReducedArrayWrapper}, settings::GenerationOptions, env_coloration::{apply_env_coloration, add_snow_falls}};
 
 pub fn generate_f32_2(h: f32, rng: &mut Mcg128Xsl64) -> f32 {
     let n = (rng.next_u32() >> 16) as f32 - TWO_POW_15_F32;
@@ -16,12 +16,12 @@ pub fn coin_flip_with_probability(p: f32, rng: &mut Mcg128Xsl64) -> bool {
     generate_f32_2(1.0, rng).abs() <= p
 }
 
-pub fn generate_terrain_texture(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, gradientmap: &Arr2d<f32>, scale_divisor: usize,
-     width: usize, ref_height: f32, shadow_direction: u8, sun_angle: f32, rng: &mut Mcg128Xsl64) {
+pub fn generate_terrain_texture(output: &mut ColorMapArray, heightmap: &mut Arr2d<f32>, gradientmap: &Arr2d<f32>, scale_divisor: usize,
+     width: usize, ref_height: f32, shadow_direction: u8, sun_angle: f32, rng: &mut Mcg128Xsl64, ambient_color: &[f32;3], sun_color: &[f32;3], settings: &GenerationOptions) {
 
     let mut noise: f32;
 
-    add_environment_coloration(output, heightmap, gradientmap, width, scale_divisor, ref_height, rng);
+    add_environment_coloration(output, heightmap, gradientmap, width, scale_divisor, ref_height, rng, settings);
 
     for x in 0..width {
         for y in 0..width {
@@ -38,8 +38,8 @@ pub fn generate_terrain_texture(output: &mut ColorMapArray, heightmap: &Arr2d<f3
 
         }
     }
-
-    add_shadow(output, heightmap, width, shadow_direction, sun_angle, ref_height);
+    
+    add_shadow(output, heightmap, width, shadow_direction, sun_angle, ref_height, ambient_color, sun_color);
 
 }
 
@@ -73,7 +73,7 @@ pub fn add_environment_coloration2(output: &mut ColorMapArray, heightmap: &Arr2d
 
 
 pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<f32>,
-     gradientmap: &Arr2d<f32>, width: usize, scale_divisor: usize, ref_height: f32, rng: &mut Mcg128Xsl64) {
+     gradientmap: &Arr2d<f32>, width: usize, scale_divisor: usize, ref_height: f32, rng: &mut Mcg128Xsl64, settings: &GenerationOptions) {
     
     let mut sum_of_heights: f32;
     let mut n: f32;
@@ -82,7 +82,8 @@ pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<
     let color_for_environements: [[f32;3]; 3] = [
         [87.0 / 255.0, 93.0 / 255.0, 98.0 / 255.0],  // roche sombre
         [185.0 / 255.0, 180.0 / 255.0, 171.0 / 255.0], // roche
-        [97.0 / 255.0, 109.0 / 255.0, 74.0 / 255.0] // vegetation
+        //[97.0 / 255.0, 109.0 / 255.0, 74.0 / 255.0] // vegetation
+        [1.2, 1.2, 1.2]
     ];
 
     let mut current_amounts: [f32; 3];
@@ -156,7 +157,6 @@ pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<
                     gradient = *gradientmap.get(x_gradientmap, y_gradientmap).unwrap_or_else(|| {println!("setting gradient to default at {} {}", x_gradientmap, y_gradientmap); &0.0});
                 }
 
-                gradient += generate_f32_2(0.1, rng);
                 gradient *= 2.0;
 
                 // gradient = sum_of_heights / n / ref_height * width as f32 / 17.0 / 8.0; // moyenne des différences, mise à l'échelle
@@ -189,7 +189,7 @@ pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<
                 current_amounts[2] += (1.0 - gradient).round();
 
                 if current_amounts[1] >= 0.0 {
-                    current_amounts[0] += generate_f32_2(0.2 + ((scaled_height * PI * 50.0).sin() + (scaled_height * PI * 30.0 + 1.0).sin() + (scaled_height * PI * 20.0 + 2.0).sin()) / 30.0, rng).abs();
+                    current_amounts[0] += 0.0;
                     current_amounts[1] -= current_amounts[0];
                 }
 
@@ -200,9 +200,9 @@ pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<
                     }
                 }
 
-                *pixel.0 += color[0] * 0.0 + 1.0;
-                *pixel.1 += color[1] * 0.0 + 1.0;
-                *pixel.2 += color[2] * 0.0 + 1.0;
+                *pixel.0 += if gradient > settings.rock_threshold { color_for_environements[1][0] * (1.5 - gradient + 1.0) / 2.0} else {color_for_environements[2][0]};
+                *pixel.1 += if gradient > settings.rock_threshold { color_for_environements[1][1] * (1.5 - gradient + 1.0) / 2.0} else {color_for_environements[2][1]};
+                *pixel.2 += if gradient > settings.rock_threshold { color_for_environements[1][2] * (1.5 - gradient + 1.0) / 2.0} else {color_for_environements[2][2]};
 
 
             }
@@ -249,7 +249,7 @@ fn checked_get_pos_with_direction(i: i32, j: i32, direction: u8, width: usize) -
 }
 
 //67 104 156
-pub fn add_shadow(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, width: usize, direction: u8, angle: f32, ref_height: f32) {
+pub fn add_shadow(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, width: usize, direction: u8, angle: f32, ref_height: f32, ambient_color: &[f32;3], sun_color: &[f32;3]) {
 
     let mut current_max_per_line: Vec<f32> = vec![0.0_f32;width];
     let mut pos: [usize; 2];
@@ -284,21 +284,28 @@ pub fn add_shadow(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, width: usi
                 for di in [-1, 1] {
                     if let Some(pos) = checked_get_pos_with_direction(i as i32 + di, j as i32, direction, width) {
                         if let Some(height) = heightmap.get(pos[0], pos[1]) {
-                            exposition_sum += get_exposition((height - local_height) * di as f32 * ref_height / width as f32, angle);
+                            exposition_sum += get_exposition((height - local_height) * di as f32, angle);
                             n += 1;
                         }
                     }
                 }
                 exposition = 1.0 - (1.0 - exposition_sum / n as f32) * 0.6;
 
+                *pixel.0 = sun_color[0] * 0.05 + *pixel.0 * 0.95;
+                *pixel.1 = sun_color[1] * 0.05 + *pixel.1 * 0.95;
+                *pixel.2 = sun_color[2] * 0.05 + *pixel.2 * 0.95;
+
 
             } else {
-                exposition -= (local_height - current_max_per_line[j]).abs() / ref_height * 0.1 + 0.60;
+                exposition -= 0.60;
+                *pixel.0 = ambient_color[0] * 0.1 + *pixel.0 * 0.9;
+                *pixel.1 = ambient_color[1] * 0.1 + *pixel.1 * 0.9;
+                *pixel.2 = ambient_color[2] * 0.1 + *pixel.2 * 0.9;
             }
 
-            *pixel.0 -= exposition;
-            *pixel.1 -= exposition;
-            *pixel.2 -= exposition;
+            *pixel.0 -= 1.0 - exposition;
+            *pixel.1 -= 1.0 - exposition;
+            *pixel.2 -= 1.0 - exposition;
 
             if i == 0 {
                 *pixel.0 += 0.5;
