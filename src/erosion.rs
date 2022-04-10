@@ -2,183 +2,12 @@ use std::convert::TryInto;
 
 use rand_pcg::Mcg128Xsl64;
 
-use crate::{utils::{ReducedArrayWrapper, generate_in_interval, linear_interpolation, bilinear_interpolation, ColorMapArray, rand, next_random_number, Vec2, Arr2d}, settings::{Settings, GenerationOptions}};
+use crate::{utils::{ReducedArrayWrapper, ColorMapArray, next_random_number, Vec2}, settings::{GenerationOptions}};
 
 
 
 
-pub fn erode2(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, color_map: &mut ColorMapArray, settings: &GenerationOptions) {
-
-    println!("starting erosion");
-
-    let mut x: usize;
-    let mut y: usize;
-
-    let mut pos: [f32; 2];
-
-    let max = 2_u16.pow(heightmap.get_reduced_n());
-
-    let mut water_remaining: u16;
-    let mut sediment_stocked: f32;
-
-    let mut current_height: f32;
-    let mut current_height_mut: &mut f32;
-
-    let mut next_height: f32;
-    let mut current_lowest_relativ_position: [i32; 2];
-
-    let mut vx: f32;
-    let mut vy: f32;
-
-    let mut speed: f32;
-
-    let mut h2: f32;
-
-    let mut slope_left: f32;
-    let mut slope_right: f32;
-    let mut slope_middle_axis_y: f32;
-    let mut slope_middle_axis_x: f32;
-
-    let mut capacity: f32;
-
-    let mut pixel: (&mut f32, &mut f32, &mut f32);
-
-    let mut to_erode: f32;
-
-    let mut adjacent_slopes: [f32;9];
-
-    let mut dx: i32;
-    let mut dy: i32;
-
-    let mut current_max: f32;
-    let mut sum: f32;
-
-    let mut f: f32;
-    let mut counter: usize;
-
-    let ref_height = settings.max_terrain_height;
-
-    for _ in 0..settings.number_of_erosion_iterations {
-        water_remaining = 200;
-        sediment_stocked = 0.0;
-        capacity = 15.0;
-
-        speed = 0.0;
-        
-        adjacent_slopes = [0.0; 9];
-
-
-        x = (generate_in_interval(max, rng) as usize).max(1).min(max as usize - 2);
-        y = (generate_in_interval(max, rng) as usize).max(1).min(max as usize - 2);
-
-        pos = [x as f32, y as f32];
-
-
-        while water_remaining > 0 {
-
-            current_height = *heightmap.get(x, y).unwrap();
-            current_max = -999999999.0;
-            sum = 0.0;
-            current_lowest_relativ_position = [0, 0];
-            counter = 0;
-
-
-            for i in 0..9_i32 {
-                dx = i.div_euclid(3) - 1;
-                dy = i % 3 - 1;
-                if let Some(height) = heightmap.geti(x as i32 + dx, y as i32 + dy) {
-                    adjacent_slopes[i as usize] = *height - current_height;
-                    current_max = f32::max(current_max, *height - current_height);
-                } else {
-                    println!("welp")
-                }
-            }
-
-            for i in 0..9_usize {
-                adjacent_slopes[i] -= current_max;
-                sum += adjacent_slopes[i];
-                assert!(adjacent_slopes[i] <= 0.0);
-            }
-
-            for i in 0..9_usize {
-                if sum == 0.0 {
-                    adjacent_slopes[i] = 1.0/9.0;
-                } else {
-                    adjacent_slopes[i] = (adjacent_slopes[i] / sum).abs();
-                    assert!(0.0 <= adjacent_slopes[i] && adjacent_slopes[i] <= 1.0, "{}, {}", adjacent_slopes[i], sum);
-    
-                }
-
-            }
-            
-            sum = 0.0;
-            counter = 0;
-            f = rand(rng);
-            while f > sum {
-                sum += adjacent_slopes[counter];
-                counter += 1;
-            }
-
-            current_lowest_relativ_position = [counter.div_euclid(3) as i32 - 1, counter as i32 % 3 - 1];
-
-
-
-
-            to_erode = (0.1 * current_height - heightmap.geti(x as i32 + current_lowest_relativ_position[0], y as i32 + current_lowest_relativ_position[1]).unwrap()).max(0.0) + 3.5;            
-            
-            current_height_mut = heightmap.get_mut(x, y).unwrap();
-
-            sediment_stocked += to_erode;
-            *current_height_mut -= to_erode;
-
-
-            if sediment_stocked > capacity * water_remaining as f32 {
-                *current_height_mut += sediment_stocked - capacity * water_remaining as f32;
-                sediment_stocked = capacity * water_remaining as f32;
-            }
-
-            *current_height_mut += f32::min(sediment_stocked, 0.5);
-            sediment_stocked -= f32::min(sediment_stocked, 0.5);
-
-            /*
-            // pixel = color_map.get_mut_pixel(heightmap.convert(y), heightmap.convert(x)).unwrap();
-            // *pixel.0 += 1.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
-            // *pixel.1 += (water_remaining as f32) / 200.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
-            */
-
-            water_remaining -= 1;
-
-            pos[0] = (pos[0] + current_lowest_relativ_position[0] as f32).clamp(1.0, max as f32 - 2.0);
-            pos[1] = (pos[1] + current_lowest_relativ_position[1] as f32).clamp(1.0, max as f32 - 2.0);
-
-            x = pos[0] as usize;
-            y = pos[1] as usize;
-
-
-            if pos[0] == 1.0 || pos[0] == max as f32 - 2.0 || pos[1] == 1.0 || pos[1] == max as f32 - 2.0 {
-                water_remaining = 0;
-            }
-
-
-        }
-
-
-
-
-
-
-
-        
-
-
-
-
-
-    }
-}
-
-
-
+// calcul l'altitude de la goutte d'eau et la pente sur l'axe des x et des y
 pub fn compute_height_and_slopes(heightmap: &ReducedArrayWrapper<f32>, offset_x: f64, offset_y: f64, arr_pos_x: usize, arr_pos_y: usize, height: &mut f64, hslope: &mut f64, vslope: &mut f64) {
 
     let height_00 = *heightmap.get(arr_pos_x, arr_pos_y).unwrap() as f64;
@@ -258,6 +87,7 @@ impl<'a> Iterator for PointsInRangeIterator<'a> {
 
 }
 
+// précalcul les points de sorte à faire une sphère autour d'une position quelconque
 pub fn compute_points_in_range(relative_points_table: &mut Vec<RelativePoint>, radius: i32) {
 
     let mut weight: f64;
@@ -283,7 +113,7 @@ pub fn compute_points_in_range(relative_points_table: &mut Vec<RelativePoint>, r
 
 
 
-pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, color_map: &mut ColorMapArray, settings: &GenerationOptions) {
+pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, _color_map: &mut ColorMapArray, settings: &GenerationOptions) {
 
     println!("starting erosion, number of iterations: {}", settings.number_of_erosion_iterations);
 
@@ -297,11 +127,6 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
 
     let mut offset_x: f64;
     let mut offset_y: f64;
-
-    let mut height_00: f64;
-    let mut height_01: f64;
-    let mut height_10: f64;
-    let mut height_11: f64;
 
     let mut height: f64 = 42.0;
 
@@ -354,7 +179,7 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
 
         sediment_stocked = 0.0;
 
-        for current_lifetime in (0..initial_lifetime).rev() {
+        for _current_lifetime in (0..initial_lifetime).rev() {
 
             arr_pos_x = pos_x as usize;
             arr_pos_y = pos_y as usize;
@@ -367,7 +192,7 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
             velocity.x = velocity.x * settings.inertia + horizontal_slope * (1.0 - settings.inertia);
             velocity.y = velocity.y * settings.inertia + vertical_slope * (1.0 - settings.inertia);
 
-            match velocity.normalize_ip() {
+            match velocity.normalize_ip() {  // le vecteur vitesse est toujours normalisé à 1 pour éviter des bonds
                 Ok(()) => (),
                 Err(()) => break
             }
@@ -392,15 +217,18 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
             to_depose = 0.0;
 
             if height_difference > 0.0 {
+                  // si la goutte remonte une pente, dépose une partie du sédiment pour essayer de faire une zone plate
                 to_depose = f64::min(height_difference, sediment_stocked);
 
             } else {
                 capacity = f64::max(min_capacity, quantity_of_water * -height_difference * settings.capacity_factor);
 
                 if capacity < sediment_stocked {
+                    // dépose 30% de la différence entre capacité et stockage
                     to_depose = (sediment_stocked - capacity) * 0.3
 
                 } else {
+                    // érode en forme de sphère autour de la position
                     to_erode = f64::min(-height_difference, (capacity - sediment_stocked) * 0.3);
 
                     for point in PointsInRangeIterator::new(&relative_points_table, array_max_index as usize + 1, arr_pos_x as i32, arr_pos_y as i32) {
@@ -432,24 +260,11 @@ pub fn erode(heightmap: &mut ReducedArrayWrapper<f32>, rng: &mut Mcg128Xsl64, co
             // // pixel = color_map.get_mut_pixel(heightmap.convert(arr_pos_y), heightmap.convert(arr_pos_x)).unwrap();
             // // *pixel.0 += 1.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
             // // *pixel.1 += (current_lifetime as f32) / 200.0 / settings.number_of_erosion_iterations as f32 * 1000.0;
-
-
-
-
-
             
                  
         }
 
-
-
-
-
-
-
     }
-
-
 
 
 }

@@ -72,33 +72,6 @@ pub fn generate_heightmap_image(v: &Arr2d<f32>, flattens: bool) -> Vec<u8> {
 }
 
 
-pub fn generate_test_image() -> Vec<u8> {
-    let mut output = Vec::new();
-
-    for i in 0..=255 {
-        output.push(i);
-        output.push(12);
-        output.push(i);
-        output.push(12);
-        output.push(i);
-        output.push(12);
-
-    }
-    for i in 0..=255 {
-        output.push(i);
-        output.push(13);
-        output.push(i);
-        output.push(13);
-        output.push(i);
-        output.push(13);
-
-    }
-
-    output
-}
-
-
-
 
 
 

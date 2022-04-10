@@ -9,8 +9,6 @@ generate_terrain_texture = true  # uniquement pris en compte si precedent est "t
 displayer_path = "C:\\Users\\Hélène Le Berre\\rp\\mapgeneration\\displayer\\launcher.cmd"
 
 
-
-
 [generation_options]
 
 # base generation options
@@ -21,11 +19,9 @@ mesh_power_of_two = 10  # taille du mesh: 2^rn + 1
 
 template_power_of_two = 6
 
-
 # diamond-square
 max_terrain_height = 150.0
 irregularity = 0.5  # réel entre 0.0 et 1.0: irregularite du terrain
-
 
 # sky generation
 sun_angle = 0.0  # réel entre 0.0 et 89.0: angle du soleil en degre par rapport a l'horizon
@@ -35,26 +31,17 @@ planet_radius = 99.0
 
 ambient_sky_light = 0.6
 
-
 # terrain texturing
 shadow_direction = 3
 
-
 # terrain deformation
-number_of_erosion_iterations = 127000
-inertia = 0.01
-radius = 3
-capacity_factor = 120.0
-initial_lifetime = 10
-
-# ----------  broken  -------------------
-number_of_erosion_iterations_2 = 10000
-inertia_2 = 0.01
-radius_2 = 10
-capacity_factor_2 = 20.0
-# ---------------------------------------
+number_of_erosion_iterations = 127000  # nombre de gouttes d'eau simulees
+inertia = 0.01  # fraction de la direction conservee entre 2 iterations
+radius = 3  # rayon d'un goutte d'eau
+capacity_factor = 120.0  # mesure de a quel point une goutte d'eau va eroder le terrain
+initial_lifetime = 10  # duree de vie d'une goutte d'eau
 
 # terrain coloration
-rock_threshold = 0.5
+rock_threshold = 0.5  # seuil de gradient a partir duquel la neige ne tient plus
 
 

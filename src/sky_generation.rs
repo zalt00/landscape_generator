@@ -210,9 +210,6 @@ impl LightSpectrum {
 
         let mut diffusion_rate: f32;
 
-        let mut emergent_color: (f32, f32, f32);
-        let mut diffused_color: (f32, f32, f32);
-
         for (i, (wavelength, color)) in self.colors.iter_mut().enumerate() {
             diffusion_rate = compute_diffusion_rate(distance, *wavelength);
             println!("diffusion rate: {}", diffusion_rate);
@@ -300,8 +297,6 @@ pub fn generate_sky_colormap(
     let squared_sphere_radius = center.pow(2);
     let mut squared_distance_from_center: i32;
 
-    let mut distance_rate: f32;
-
     let mut pix_color: (f32, f32, f32);
     let mut wl: f32;
 
@@ -315,11 +310,7 @@ pub fn generate_sky_colormap(
 
     let mut view_angle: f32;
 
-    let mut travelling_distance: f32;
-
     let mut ratio: f32;
-
-    let mut buf: usize;
 
     for x in 0..w {
         for y in 0..w {

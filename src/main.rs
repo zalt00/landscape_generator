@@ -1,10 +1,7 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
 #![allow(non_snake_case)]
-#![allow(unused_variables)]
 
 
-use std::{f32::INFINITY, process::Command, io::Write};
+use std::{process::Command, io::Write};
 
 mod diamondsquare;
 mod sky_generation;
@@ -14,19 +11,13 @@ mod terrain_texture_generation;
 mod settings;
 mod gradient_map_generation;
 mod erosion;
-mod env_coloration;
 
-use image::ImageBuffer;
-use image_generation::generate_test_image;
 use rand_pcg::Mcg128Xsl64;
 use settings::{LaunchOptions, Settings};
 use terrain_texture_generation::generate_terrain_texture;
 
-use crate::{diamondsquare::{diamond_square_2, generate_demisphere_heightmap}, image_generation::{generate_colormap_image, generate_heightmap_image}, sky_generation::{LightSpectrum, generate_sky_colormap}, utils::{Arr2d, ColorMapArray, PI}, gradient_map_generation::generate_gradient_map, erosion::erode};
+use crate::{diamondsquare::{diamond_square_2, generate_demisphere_heightmap}, image_generation::{generate_colormap_image, generate_heightmap_image}, sky_generation::{LightSpectrum, generate_sky_colormap}, utils::{Arr2d, ColorMapArray, PI}, gradient_map_generation::generate_gradient_map};
 
-
-
-use crate::utils::ReducedArrayWrapper;
 
 
 
@@ -137,7 +128,6 @@ fn generate(settings: &Settings) {
             &generate_heightmap_image(&terrain_gradientmap, false),
             reduced_w as u32, reduced_w as u32, image::ColorType::Rgb8).expect("welp");
     
-            let mut buffer: Arr2d<f32> = Arr2d::zeros(w, w);
             generate_terrain_texture(&mut terrain_colormap, &mut terrain_heightmap, &terrain_gradientmap, w.div_euclid(reduced_w) + 1, w, settings.generation_options.max_terrain_height * 2_f32.powi(1),
                 settings.generation_options.shadow_direction, settings.generation_options.sun_angle * PI / 180.0,  &mut rng, &ambient_col_out, &sun_col_out, &settings.generation_options);
 
@@ -154,7 +144,7 @@ fn generate(settings: &Settings) {
 
 
 fn display(launch_settings: &LaunchOptions) {
-    let output = Command::new(&launch_settings.displayer_path)
+    let _output = Command::new(&launch_settings.displayer_path)
         // .arg("cmd")
         // .arg(r"C:\Users\Hélène Le Berre\rp\mapgeneration\displayer\main.py")
         .output()

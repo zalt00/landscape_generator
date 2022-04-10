@@ -1,5 +1,4 @@
-use config::{ConfigError, Config, File, Environment};
-use std::env;
+use config::{ConfigError, Config, File};
 use serde_derive::Deserialize;
 
 
@@ -40,12 +39,6 @@ pub struct GenerationOptions {
     pub radius: u8,
     pub capacity_factor: f64,
     pub initial_lifetime: u8,
-
-
-    pub number_of_erosion_iterations_2: u32,
-    pub inertia_2: f64,
-    pub radius_2: u16,
-    pub capacity_factor_2: f64,
 
     pub rock_threshold: f32
 

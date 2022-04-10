@@ -1,19 +1,12 @@
-use core::num;
-use std::convert::TryInto;
-
 use rand_core::RngCore;
 use rand_pcg::Mcg128Xsl64;
 
-use crate::{utils::{Arr2d, ColorMapArray, HALF_PI, PI, TWO_POW_15_F32, bilinear_interpolation, ReducedArrayWrapper}, settings::GenerationOptions, env_coloration::{apply_env_coloration, add_snow_falls}};
+use crate::{utils::{Arr2d, ColorMapArray, HALF_PI, TWO_POW_15_F32, bilinear_interpolation}, settings::GenerationOptions};
 
 pub fn generate_f32_2(h: f32, rng: &mut Mcg128Xsl64) -> f32 {
     let n = (rng.next_u32() >> 16) as f32 - TWO_POW_15_F32;
 
     ((n as f32) / TWO_POW_15_F32) * h
-}
-
-pub fn coin_flip_with_probability(p: f32, rng: &mut Mcg128Xsl64) -> bool {
-    generate_f32_2(1.0, rng).abs() <= p
 }
 
 pub fn generate_terrain_texture(output: &mut ColorMapArray, heightmap: &mut Arr2d<f32>, gradientmap: &Arr2d<f32>, scale_divisor: usize,
@@ -43,41 +36,9 @@ pub fn generate_terrain_texture(output: &mut ColorMapArray, heightmap: &mut Arr2
 
 }
 
-fn above_threshold(v: f32, t: f32) -> f32 {
-    if v >= t {
-        1.0
-    } else {
-        v
-    }
-}
 
-fn below_threshold(v: f32, t: f32) -> f32 {
-    if v <= t {
-        0.0
-    } else {
-        v
-    }
-}
-
-
-
-pub fn add_environment_coloration2(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, width: usize, settings: &GenerationOptions, rng: &mut Mcg128Xsl64) {
-
-    
-
-
-
-}
-
-
-
-
-pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<f32>,
-     gradientmap: &Arr2d<f32>, width: usize, scale_divisor: usize, ref_height: f32, rng: &mut Mcg128Xsl64, settings: &GenerationOptions) {
-    
-    let mut sum_of_heights: f32;
-    let mut n: f32;
-    let mut current_height: &f32;
+pub fn add_environment_coloration(output: &mut ColorMapArray, _heightmap: &Arr2d<f32>,
+     gradientmap: &Arr2d<f32>, width: usize, scale_divisor: usize, _ref_height: f32, _rng: &mut Mcg128Xsl64, settings: &GenerationOptions) {
 
     let color_for_environements: [[f32;3]; 3] = [
         [87.0 / 255.0, 93.0 / 255.0, 98.0 / 255.0],  // roche sombre
@@ -88,46 +49,10 @@ pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<
 
     let mut current_amounts: [f32; 3];
 
-    let mut snowy = false;
-
     let mut gradient: f32;
-    let mut max_gradient = -78_f32;
-    let mut min_gradient = 78_f32;
 
-    let ref_height_squared = ref_height.powi(2);
+    let mut color: [f32; 3];
 
-    // let mut x2_result: Result<usize, _>;
-    // let mut y2_result: Result<usize, _>;
-
-    let mut color: [f32; 3] = [0.0, 0.0, 0.0];
-
-    let mut scaled_height: f32;
-
-    let gradient_width = 40;
-
-    let mut previous_value: f32;
-
-    let mut v_: f32;
-
-    // for x in 0..width {
-    //     previous_value = 0.0;
-    //     for y in 0..width {
-    //         if let Some(value) = buffer.get_mut(x, y) {
-    //             if let Some(height) = heightmap.get(x, y) {
-    //                 scaled_height = *height;
-
-    //                 *value = scaled_height + previous_value;
-
-    //                 if let Some(prev_height) = heightmap.get(x, y.checked_sub(gradient_width * 2).unwrap_or(999999)) {
-    //                     *value -= prev_height;
-    //                 }
-
-    //                 previous_value = *value;
-    //             }
-    //         }
-    //     }
-    // }
-    
     let mut x_gradientmap: usize;
     let mut y_gradientmap: usize;
 
@@ -138,9 +63,6 @@ pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<
         for y in 0..width {
 
             if let Some(pixel) = output.get_mut_pixel(y, x) {
-
-                current_height = heightmap.get(x, y).unwrap();
-                scaled_height = current_height / ref_height;
 
                 x_gradientmap = x.div_euclid(scale_divisor);
                 y_gradientmap = y.div_euclid(scale_divisor);
@@ -158,28 +80,7 @@ pub fn add_environment_coloration(output: &mut ColorMapArray, heightmap: &Arr2d<
                 }
 
                 gradient *= 2.0;
-
-                // gradient = sum_of_heights / n / ref_height * width as f32 / 17.0 / 8.0; // moyenne des différences, mise à l'échelle
-                
-                // sum_of_heights = *buffer.get(x, (y + gradient_width).min(width - 1)).unwrap();
-                
-                // if y > 20 && false {
-                //     assert_eq!(sum_of_heights, {
-
-                //         let mut v_ = 0_f32;
-
-                //         for dy in -(gradient_width as i16)..gradient_width as i16 {
-                //             v_ += heightmap.get(x, (y as i16 + dy) as usize).unwrap()
-                //         }
-                //         v_
-    
-                //     });                }
-
-
-
-
-                // gradient = (sum_of_heights / (gradient_width * 2) as f32 - current_height).abs() / ref_height * width as f32 / 10.0 / 8.0;
-                
+          
                 gradient_total += gradient;
                 number_of_points += 1.0;
 
@@ -260,7 +161,6 @@ pub fn add_shadow(output: &mut ColorMapArray, heightmap: &Arr2d<f32>, width: usi
     let mut exposition: f32;
     let mut local_height: f32;
 
-    let mut slope: f32;
     let mut exposition_sum: f32;
     let mut n: u8;
 

@@ -9,7 +9,8 @@ pub fn generate_gradient_map(heightmap: &Arr2d<f32>, output: &mut Arr2d<f32>, re
     let mut current_sum: f32;
     let mut current_max = -f32::INFINITY;
 
-
+    // gradient à une position: moyenne des valeurs absolues des différences entre la hauteur à cette position position 
+    // et celles des positions d'une distance inférieure ou égale à step
     for x in 0..w {
         for y in 0..w {
             number_of_points = 0;

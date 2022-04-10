@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+
+
 use std::convert::TryInto;
 
 use image::{DynamicImage, GenericImageView};
@@ -7,22 +10,11 @@ use rand_pcg::Mcg128Xsl64;
 use crate::settings::GenerationOptions;
 
 pub const TWO_POW_32_MINUS_1: u32 = 4294967295;
-pub const TWO_POW_32: u64 = 4294967296;
-pub const TWO_POW_31: u32 = 2147483648;
-pub const TWO_POW_31_F32: f32 = 2147483648.0;
 
 pub const TWO_POW_15_F32: f32 = 32768.0;
 
-pub const TWO_POW_16: u32 = 65536;
-pub const TWO_POW_16_F32: f32 = 65536.0;
-
-pub const TWO_POW_17_F32: f32 = 131072.0;
-
 pub const PI: f32 = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647;
 pub const HALF_PI: f32 = PI / 2.0;
-pub const TAU: f32 = PI * 2.0;
-
-pub const TWO_POW_15: u32 = 32768;
 
 #[derive(Clone, Copy)]
 pub struct Vec2<T> {
@@ -97,9 +89,6 @@ impl ColorMapArray {
     }
 
     pub fn lighten_portion(&mut self, x: usize, y: usize, width: usize, wp: f32) -> Option<()> {
-
-        let mut t1: f32;
-        let mut t2: f32;
 
         let mut pix;
         let mut white_proportion;
