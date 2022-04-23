@@ -1,6 +1,6 @@
 # Landscape Generator
 
-Tool for landscape procedural generation. 
+Tool for procedural landscape generation. 
 
 Setup :
 ---
